@@ -1,0 +1,163 @@
+C51 COMPILER V9.01   F35X_ADC0_EXTERNALINPUT                                               04/23/2013 13:03:26 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE F35X_ADC0_EXTERNALINPUT
+OBJECT MODULE PLACED IN F35x_ADC0_ExternalInput.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE scr\F35x_ADC0_ExternalInput.c BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT
+                    -(.\F35x_ADC0_ExternalInput.lst) OBJECT(F35x_ADC0_ExternalInput.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // F35x_ADC0_ExternalInput.c
+   3          //-----------------------------------------------------------------------------
+   4          // Copyright 2006 Silicon Laboratories, Inc.
+   5          // http://www.silabs.com
+   6          //
+   7          // Program Description:
+   8          // --------------------
+   9          //
+  10          // This example code for the C8051F350 takes measurements from input A1N0.2
+  11          // using ADC0 then prints the results to a terminal window via the UART.
+  12          //
+  13          // The system is clocked by the internal 24.5MHz oscillator. The completion of
+  14          // this conversion in turn triggers an interrupt service routine (ISR). The ISR
+  15          // calculates the ADC0 result into the equivalent mV and then prints the value
+  16          // to the terminal via printf before starting another conversion.
+  17          //
+  18          // The analog multiplexer selects A1N2 as the positive ADC0 input.  This
+  19          // port is configured as an analog input in the port initialization routine.
+  20          // The negative ADC0 input is connected via mux to ground, which provides
+  21          // for a single-ended ADC input.
+  22          //
+  23          // A 100kohm potentiometer may be connected as a voltage divider between
+  24          // VREF and AGND on the terminal strip as shown below:
+  25          //
+  26          // ---------
+  27          //          |
+  28          //         o| VREF ----|
+  29          //         o| GND   ---|<-|
+  30          //         o| AIN2     |  |
+  31          //         o|    |        |
+  32          //         o|     --------
+  33          //         o|
+  34          //          |
+  35          //----------
+  36          // C8051F350-TB
+  37          //
+  38          // Terminal output is done via printf, which directs the characters to
+  39          // UART0.
+  40          //
+  41          // F350 Delta-Sigma ADC
+  42          // --------------------
+  43          // Please see Silicon Labs Applicaton Note AN217 for more information
+  44          // on the C8051F35x Delta-Sigma ADC.  AN217 can be found on the Applications
+  45          // webpage by going to the Silicon Labs Microcontrollers homepage
+  46          // (www.silabs.com -> select Microcontrollers under "Products at the top) and
+  47          // clicking the gray link on the left.
+  48          //
+  49          // Direct link:
+  50          //   http://www.silabs.com/products/microcontroller/applications.asp
+  51          //
+  52          // F350 Resources:
+  53          // ---------------
+  54          // Timer1: clocks UART
+C51 COMPILER V9.01   F35X_ADC0_EXTERNALINPUT                                               04/23/2013 13:03:26 PAGE 2   
+
+  55          //
+  56          // How To Test:
+  57          // ------------
+  58          // 1) Download code to a 'F350 device on a C8051F350-TB development board
+  59          // 2) Connect serial cable from the transceiver to a PC
+  60          // 3) On the PC, open HyperTerminal (or any other terminal program) and connect
+  61          //    to the COM port at <BAUDRATE> and 8-N-1
+  62          // 4) Connect a variable voltage source (between 0 and Vref)
+  63          //    to AIN2, or a potentiometer voltage divider as shown above.
+  64          // 5) HyperTerminal will print the voltage measured by the device.
+  65          //
+  66          // FID:            35X000029
+  67          // Target:         C8051F350
+  68          // Tool chain:     Keil C51 7.50 / Keil EVAL C51
+  69          // Command Line:   None
+  70          //
+  71          // Release 1.0
+  72          //    -Initial Revision (SM / TP)
+  73          //    - 8 NOV 2006
+  74          
+  75          //-----------------------------------------------------------------------------
+  76          // Includes
+  77          //-----------------------------------------------------------------------------
+  78          #include "F35x_ADC0_ExternalInput.h"
+  79          //-----------------------------------------------------------------------------
+  80          // Oscillator_Init
+  81          //-----------------------------------------------------------------------------
+  82          //
+  83          // Return Value : None
+  84          // Parameters   : None
+  85          //
+  86          // This routine initializes the system clock to use the internal 24.5MHz
+  87          // oscillator as its clock source.  Also enables missing clock detector reset.
+  88          //
+  89          //-----------------------------------------------------------------------------
+  90          void Oscillator_Init (void)
+  91          {
+  92   1         OSCICN = 0x83;                      // Configure internal oscillator for
+  93   1                                             // its lowest frequency
+  94   1         RSTSRC = 0x04;                      // Enable missing clock detector
+  95   1      }
+  96          
+  97          
+  98          //-----------------------------------------------------------------------------
+  99          // ADC0_Init
+ 100          //-----------------------------------------------------------------------------
+ 101          //
+ 102          // Return Value : None
+ 103          // Parameters   : None
+ 104          //
+ 105          // Initialize the ADC to use the temperature sensor. (non-differential)
+ 106          //
+ 107          //-----------------------------------------------------------------------------
+ 108          void ADC0_Init (void)
+ 109          {
+ 110   1         REF0CN |= 0x03;                     // Enable internal Vref
+ 111   1         ADC0CN = 0x00;                      // Gain = 1, Unipolar mode
+ 112   1         ADC0CF = 0x00;                      // Interrupts upon SINC3 filter output
+ 113   1                                             // and uses internal VREF
+ 114   1      
+ 115   1         ADC0CLK = (SYSCLK/MDCLK)-1;         // Generate MDCLK for modulator.
+ 116   1                                             // Ideally MDCLK = 2.4576MHz
+C51 COMPILER V9.01   F35X_ADC0_EXTERNALINPUT                                               04/23/2013 13:03:26 PAGE 3   
+
+ 117   1      
+ 118   1         // Program decimation rate for desired OWR
+ 119   1         ADC0DEC = ((unsigned long) MDCLK / (unsigned long) OWR /
+ 120   1                    (unsigned long) 128) - 1;
+ 121   1      
+ 122   1         ADC0BUF = 0x00;                     // Turn off Input Buffers
+ 123   1         ADC0MUX = 0x08;                     // Select AIN0.2 
+ 124   1      
+ 125   1         ADC0MD = 0x81;                      // Start internal calibration
+ 126   1         while(AD0CALC != 1);                // Wait until calibration is complete
+ 127   1      
+ 128   1         EIE1   |= 0x08;                     // Enable ADC0 Interrupts
+ 129   1         ADC0MD  = 0x80;                     // Enable the ADC0 (IDLE Mode)
+ 130   1      }
+ 131          
+ 132          
+ 133          //-----------------------------------------------------------------------------
+ 134          // End Of File
+ 135          //-----------------------------------------------------------------------------
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     42    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

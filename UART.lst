@@ -1,0 +1,125 @@
+C51 COMPILER V9.01   UART                                                                  03/19/2013 17:13:38 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN UART.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE scr\UART.c BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT(.\UART.lst) OBJECT
+                    -(UART.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // UART.c
+   3          //-----------------------------------------------------------------------------
+   4          
+   5          //-----------------------------------------------------------------------------
+   6          // Include Files
+   7          //-----------------------------------------------------------------------------
+   8          #include "UART.h"
+   9          
+  10          extern unsigned char TX_Ready ;
+  11          //-----------------------------------------------------------------------------
+  12          // Port_Init
+  13          //-----------------------------------------------------------------------------
+  14          //
+  15          // Return Value : None
+  16          // Parameters   : None
+  17          //
+  18          // This function initializes the GPIO and the Crossbar
+  19          //
+  20          // Pinout:
+  21          //
+  22          //   P0.4 - UART TX (digital, push-pull)
+  23          //   P0.5 - UART RX (digital, open-drain)
+  24          //-----------------------------------------------------------------------------
+  25          void UART_Port_Init (void)
+  26          {
+  27   1         XBR0 = 0x01;                        // UART0 Selected
+  28   1      
+  29   1         XBR1 = 0x40;                        // Enable crossbar and weak pull-ups
+  30   1      
+  31   1         P0MDOUT |= 0xD0;                    // TX, LEDs = Push-pull
+  32   1      }
+  33          
+  34          //-----------------------------------------------------------------------------
+  35          // UART0_Init
+  36          //-----------------------------------------------------------------------------
+  37          //
+  38          // Return Value : None
+  39          // Parameters   : None
+  40          //
+  41          // Configure the UART0 using Timer1, for <BAUDRATE> and 8-N-1.
+  42          //
+  43          //-----------------------------------------------------------------------------
+  44          void UART0_Init (void)
+  45          {
+  46   1         UART_Port_Init ();
+  47   1         SCON0 = 0x10;                       // SCON0: 8-bit variable bit rate
+  48   1                                             //        level of STOP bit is ignored
+  49   1                                             //        RX enabled
+  50   1                                             //        ninth bits are zeros
+  51   1                                             //        clear RI0 and TI0 bits
+  52   1         if (SYSCLK/BAUDRATE/2/256 < 1) {
+  53   2            TH1 = -(SYSCLK/BAUDRATE/2);
+  54   2            CKCON &= ~0x0B;                  // T1M = 1; SCA1:0 = xx
+C51 COMPILER V9.01   UART                                                                  03/19/2013 17:13:38 PAGE 2   
+
+  55   2            CKCON |=  0x08;
+  56   2         } else if (SYSCLK/BAUDRATE/2/256 < 4) {
+  57   2            TH1 = -(SYSCLK/BAUDRATE/2/4);
+  58   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 01                  
+  59   2            CKCON |=  0x01;
+  60   2         } else if (SYSCLK/BAUDRATE/2/256 < 12) {
+  61   2            TH1 = -(SYSCLK/BAUDRATE/2/12);
+  62   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 00
+  63   2         } else {
+  64   2            TH1 = -(SYSCLK/BAUDRATE/2/48);
+  65   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 10
+  66   2            CKCON |=  0x02;
+  67   2         }
+  68   1      
+  69   1         TL1 = TH1;                          // Init Timer1
+  70   1         TMOD &= ~0xf0;                      // TMOD: timer 1 in 8-bit autoreload
+  71   1         TMOD |=  0x20;                       
+  72   1         TR1 = 1;                            // START Timer1
+  73   1         TI0 = 1;                            // Indicate TX0 ready
+  74   1         ES0 = 1;                            // Enable UART0 interrupts
+  75   1         TI0 = 1;                            //声明TX0就绪,可以发送
+  76   1         TR0 = 1;
+  77   1      }
+  78          
+  79          void Send_Char(unsigned char ch)
+  80          {
+  81   1               SBUF0 = ch;                             //送入缓冲区
+  82   1               while(TI0 == 0);                        //等待发送完毕
+  83   1               TI0 = 0;                                //软件清零
+  84   1      }
+  85          
+  86          //发送字符串,调用Send_Char() len字符串长度
+  87          void Send_String(unsigned char * str,unsigned int len)
+  88          {
+  89   1          unsigned int k = 0;
+  90   1          do 
+  91   1          {
+  92   2              Send_Char(*(str + k));
+  93   2              k++;
+  94   2          } while(k < len);
+  95   1      }
+  96          
+  97          //-----------------------------------------------------------------------------
+  98          // End Of File
+  99          //-----------------------------------------------------------------------------
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     95    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,174 @@
+C51 COMPILER V9.01   INTERRUPT                                                             04/23/2013 13:28:15 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE INTERRUPT
+OBJECT MODULE PLACED IN Interrupt.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE user\Interrupt.c BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT(.\Interrupt.
+                    -lst) OBJECT(Interrupt.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // Ext_Interrupt_Init
+   3          //-----------------------------------------------------------------------------
+   4          #include "Interrupt.h"
+   5          
+   6          char readCounts = 0;               //已经读取的字符个数,与MAX_LEN比较
+   7          bit  readFlag = 0;                //读标志
+   8          char idata trdata[10];      //要接收/发送的字符串
+   9          //-----------------------------------------------------------------------------
+  10          // ADC0_ISR
+  11          //-----------------------------------------------------------------------------
+  12          //
+  13          // This ISR prints the result to the UART. The ISR is called after each ADC
+  14          // conversion.
+  15          //
+  16          //-----------------------------------------------------------------------------
+  17          
+  18          void ADC0_ISR (void) interrupt 10
+  19          {
+  20   1         static LONGDATA rawValue;
+  21   1        
+  22   1         signed long AD_value;
+  23   1       
+  24   1         while(!AD0INT);                     // Wait till conversion complete
+  25   1         AD0INT = 0;                         // Clear ADC0 conversion complete flag
+  26   1      
+  27   1         // Copy the output value of the ADC
+  28   1         rawValue.Byte[Byte3] = 0x00;
+  29   1         rawValue.Byte[Byte2] = (unsigned char)ADC0H;
+  30   1         rawValue.Byte[Byte1] = (unsigned char)ADC0M;
+  31   1         rawValue.Byte[Byte0] = (unsigned char)ADC0L;
+  32   1      
+  33   1         //                           Vref (mV)
+  34   1         //   measurement (mV) =   --------------- * result (bits)
+  35   1         //                       (2^24)-1 (bits)
+  36   1         //
+  37   1         //   measurement (mV) =  result (bits) / ((2^24)-1 (bits) / Vref (mV))
+  38   1         //
+  39   1         //
+  40   1         //   With a Vref (mV) of 2500:
+  41   1         //
+  42   1         //   measurement (mV) =  result (bits) / ((2^24)-1 / 2500)
+  43   1         //
+  44   1         //   measurement (mV) =  result (bits) / ((2^24)-1 / 2500)
+  45   1         //
+  46   1         //   measurement (mV) =  result (bits) / (16777215 / 2500)
+  47   1         //
+  48   1         //   measurement (mV) =  result (bits) / (6710)
+  49   1      
+  50   1           AD_value = (rawValue.result / 6710);          // Because of bounds issues, this
+  51   1                                                                                                 // calculation has been manipulated as
+  52   1                                                         // shown above
+  53   1                                                         // (i.e. 2500 (VREF) * 2^24 (ADC result)
+  54   1                                                         // is greater than 2^32)
+C51 COMPILER V9.01   INTERRUPT                                                             04/23/2013 13:28:15 PAGE 2   
+
+  55   1              printf("AIN0.2 voltage: %4ld mV\n",AD_value);
+  56   1              //printf("\n");
+  57   1              vault[AD_cout]=AD_value;
+  58   1              AD_cout++;
+  59   1              //printf("AD_value voltage: %ld mv\n",AD_value);
+  60   1              if(AD_cout>=16)
+  61   1              {
+  62   2                      AD_flag=1;//计数标志位溢出标志  
+  63   2                      AD_cout=0;//计数器复位重新计数
+  64   2      
+  65   2              }       
+  66   1      }
+  67          
+  68          void UART0_Interrupt (void) interrupt 4
+  69          {
+  70   1         char rxch;
+  71   1         char flag=0;
+  72   1         if(RI0)                     //中断标志 RI0=1 数据完整接收
+  73   1         {
+  74   2              RI0 = 0;                           //软件清零
+  75   2              rxch = SBUF0;
+  76   2                                       //读缓冲
+  77   2              trdata[readCounts] = rxch;          //存入数组,供发送
+  78   2      
+  79   2              if(flag==0&&trdata[0]=='H')
+  80   2              {
+  81   3                      
+  82   3                      readCounts++;
+  83   3                      flag=1;
+  84   3              }
+  85   2      
+  86   2              else if(flag==1&&trdata[1]=='D')
+  87   2              {
+  88   3                      readCounts++;
+  89   3                      flag=2;
+  90   3              }
+  91   2      
+  92   2              else if(flag==2&&trdata[2]=='M')
+  93   2              {
+  94   3                      readCounts++;
+  95   3              } 
+  96   2      
+  97   2              if(readCounts>=13)//数据帧接受完毕 
+  98   2              {
+  99   3                      if(trdata[12]=='E')
+ 100   3                      {
+ 101   4                              readCounts = 0;
+ 102   4                              readFlag = 1;
+ 103   4                      }
+ 104   3                      else
+ 105   3                      {
+ 106   4                              readCounts = 0;
+ 107   4                              flag=0;
+ 108   4                      }
+ 109   3              }
+ 110   2      
+ 111   2         }
+ 112   1      }
+ 113          //
+ 114          ////-----------------------------------------------------------------------------
+ 115          //// /INT0 ISR
+ 116          ////-----------------------------------------------------------------------------
+C51 COMPILER V9.01   INTERRUPT                                                             04/23/2013 13:28:15 PAGE 3   
+
+ 117          ////
+ 118          //// Whenever a negative edge appears on P0.0, LED1 is toggled.
+ 119          //// The interrupt pending flag is automatically cleared by vectoring to the ISR
+ 120          ////
+ 121          ////-----------------------------------------------------------------------------
+ 122          //void INT0_ISR (void) interrupt 0
+ 123          //{
+ 124          //   //add your code here
+ 125          //   //LED1 = !LED1;
+ 126          //
+ 127          //}
+ 128          ////-----------------------------------------------------------------------------
+ 129          //// /INT1 ISR
+ 130          ////-----------------------------------------------------------------------------
+ 131          ////
+ 132          //// Whenever a negative edge appears on P0.1, LED2 is toggled.
+ 133          //// The interrupt pending flag is automatically cleared by vectoring to the ISR
+ 134          ////
+ 135          ////-----------------------------------------------------------------------------
+ 136          //void INT1_ISR (void) interrupt 2
+ 137          //{
+ 138          //   //add your code here
+ 139          //   //LED2 = !LED2;
+ 140          //}
+ 141          
+ 142          //-----------------------------------------------------------------------------
+ 143          // End Of File
+ 144          //-----------------------------------------------------------------------------
+ 145          
+ 146          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    269    ----
+   CONSTANT SIZE    =     25    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       4
+   IDATA SIZE       =     78    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

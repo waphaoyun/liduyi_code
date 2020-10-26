@@ -1,0 +1,1 @@
+"scr\F35x_ADC0_ExternalInput.c" BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT(.\F35x_ADC0_ExternalInput.lst) OBJECT(F35x_ADC0_ExternalInput.obj)

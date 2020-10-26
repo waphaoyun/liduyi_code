@@ -1,0 +1,155 @@
+C51 COMPILER V9.53.0.0   1602_4BIT                                                         04/11/2020 21:00:03 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE 1602_4BIT
+OBJECT MODULE PLACED IN 1602_4bit.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE scr\1602_4bit.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEN
+                    -D PRINT(.\1602_4bit.lst) TABS(2) OBJECT(1602_4bit.obj)
+
+line level    source
+
+   1          #include "1602_4bit.h"                 // SFR declarations
+   2          ////lcd part
+   3          //#define          LINE1                             0
+   4          //#define          LINE2                             1
+   5          //#define          LINE1_HEAD                        0x80
+   6          //#define          LINE2_HEAD                        0xC0
+   7          //#define          CLEARSCREEN                       LCD_en_com(0x01)
+   8          ///*************************************/
+   9          ////change this part at different board
+  10          //sbit DB7=P1^3;
+  11          //sbit DB6=P1^2;
+  12          //sbit DB5=P1^1;
+  13          //sbit DB4=P1^0;
+  14          //sbit LCD1602_RS=P0^4;   //data command select  1 data  0 command  pin 4 
+  15          //sbit LCD1602_RW=P0^3;   //read write select   1 read   0 write     pin 5
+  16          //sbit LCD1602_EN=P0^5;   //LCD enable signal             pin 6
+  17          ///********************************************************************/
+  18          void LCD_Prot_Init()      
+  19          {
+  20   1         P0MDOUT = 0xC0;                      //P1.7±≥π‚ P1.6∞¥º¸
+  21   1      
+  22   1         P1MDOUT = 0xBF;                     //P1ø⁄»´≤øŒ™ ‰≥ˆ
+  23   1      
+  24   1         P1MDIN |= 0x40;             //P1.6…Ë÷√≥… ‰»Î
+  25   1      
+  26   1         XBR1    = 0x40;                     // Enable crossbar and enable 
+  27   1      }
+  28          
+  29          void delay(unsigned int n)      
+  30          {
+  31   1          unsigned int i=0,j=0;
+  32   1          for (i=n;i>0;i--)
+  33   1           for (j=0;j<120;j++);  
+  34   1      }
+  35          void LCD_en_com(unsigned char command)
+  36          {
+  37   1              DB7=(command>>7)%2;
+  38   1              DB6=(command>>6)%2;
+  39   1              DB5=(command>>5)%2;
+  40   1              DB4=(command>>4)%2;
+  41   1              LCD1602_RS = 0;           //RS 0 
+  42   1              //LCD1602_RW = 0;                //RW 0 
+  43   1              LCD1602_EN = 1;        //EN --\|/__        Write command
+  44   1              delay(2);
+  45   1              LCD1602_EN = 0;
+  46   1      
+  47   1              DB7=(command>>3)%2;
+  48   1              DB6=(command>>2)%2;
+  49   1              DB5=(command>>1)%2;
+  50   1              DB4=(command>>0)%2;
+  51   1              LCD1602_RS = 0;           //RS 0 
+  52   1              //LCD1602_RW = 0;                //RW 0 
+  53   1              LCD1602_EN = 1;        //EN --\|/__        Write command
+  54   1              delay(2);
+C51 COMPILER V9.53.0.0   1602_4BIT                                                         04/11/2020 21:00:03 PAGE 2   
+
+  55   1              LCD1602_EN = 0;
+  56   1      }
+  57          void LCD_en_dat(unsigned char command)
+  58          {
+  59   1              DB7=(command>>7)%2;
+  60   1              DB6=(command>>6)%2;
+  61   1              DB5=(command>>5)%2;
+  62   1              DB4=(command>>4)%2;
+  63   1              LCD1602_RS = 1;        //RS 1 
+  64   1              //LCD1602_RW = 0;                //RW 0 
+  65   1              LCD1602_EN = 1;        //EN --\|/__        Write data
+  66   1              delay(2);
+  67   1              LCD1602_EN = 0;
+  68   1      
+  69   1              DB7=(command>>3)%2;
+  70   1              DB6=(command>>2)%2;
+  71   1              DB5=(command>>1)%2;
+  72   1              DB4=(command>>0)%2;
+  73   1              LCD1602_RS = 1;        //RS 1 
+  74   1              //LCD1602_RW = 0;                //RW 0 
+  75   1              LCD1602_EN = 1;        //EN --\|/__        Write data
+  76   1              delay(2);
+  77   1              LCD1602_EN = 0;
+  78   1      }
+  79          void LCD_set_xy(unsigned char x,unsigned char y)
+  80          {
+  81   1              unsigned char address;
+  82   1              if(y == LINE1)        
+  83   1                      address = LINE1_HEAD + x;
+  84   1              else                         
+  85   1                      address = LINE2_HEAD + x;
+  86   1              delay(10);
+  87   1              LCD_en_com(address); 
+  88   1      }
+  89          void LCD_write_string(unsigned char x,unsigned char y,unsigned char *s)
+  90          {
+  91   1              LCD_set_xy(x,y); 
+  92   1              while(*s)  
+  93   1              {
+  94   2                      LCD_en_dat(*s);   
+  95   2                      s++;
+  96   2              }
+  97   1      }
+  98          void LCD_init(void)
+  99          {
+ 100   1        LCD_Prot_Init();//≥ı ºªØLCDπ‹Ω≈
+ 101   1        delay(50); 
+ 102   1        LCD_en_com(0x33);//‘≠¿¥1602≥ı ºªØ≥…4Œª ˝æ›œﬂ÷Æ«∞±ÿ–Ëœ»≥ı ºªØ≥…8Œª(¥À ±√¸¡Ó∑¢ÀÕ∑Ω Ω «8Œª∏Ò Ω,µ´ ˝æ›œﬂ÷ª–ËΩ
+             -”4Œª)
+ 103   1        delay(10);
+ 104   1        LCD_en_com(0x32);//»ª∫Û‘Ÿ∏ƒµΩ4ŒªœﬂøÌ,’‚—˘≥ı ºªØ≤≈Œ»∂®
+ 105   1        delay(10); 
+ 106   1        LCD_en_com(0x28);//Àƒœﬂƒ£ Ω…Ë÷√
+ 107   1        delay(10);
+ 108   1        LCD_en_com(0x0c);//œ‘ æø™--∂‘”¶ø™πÿœ‘ æøÿ÷∆÷∏¡Ó
+ 109   1        delay(10);
+ 110   1        CLEARSCREEN;
+ 111   1        delay(30);
+ 112   1      }
+ 113          void LCD_clr(void)      
+ 114          {
+ 115   1        LCD_en_com(0x01);
+C51 COMPILER V9.53.0.0   1602_4BIT                                                         04/11/2020 21:00:03 PAGE 3   
+
+ 116   1          delay(1700);
+ 117   1      }
+ 118          /********************************************************************/
+ 119          //
+ 120          //void main(void)
+ 121          //{
+ 122          //LCD_init();
+ 123          //   LCD_write_string(0,LINE1,"0123456789abcdef");
+ 124          //   LCD_write_string(3,LINE2,"Advanced");
+ 125          //  while(1);                  
+ 126          //} 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    341    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

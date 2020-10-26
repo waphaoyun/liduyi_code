@@ -1,0 +1,5 @@
+"STARTUP.obj",
+"1602_4bit.obj",
+"main.obj" 
+TO "project_C8051" 
+RAMSIZE(256) 

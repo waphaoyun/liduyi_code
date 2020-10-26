@@ -1,0 +1,260 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+H:\GHO\C8051F350代码实现尝试速度提高 加班 1109\C8051AD&UART\project_C8051.uvproj
+Project File Date:  11/06/2017
+
+<h2>Output:</h2>
+Rebuild target 'Target 1'
+assembling STARTUP.A51...
+compiling 1602_4bit.c...
+compiling main.c...
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(16): error C231: 'P0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(17): error C231: 'SP': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(18): error C231: 'DPL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(19): error C231: 'DPH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(20): error C231: 'PCON': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(21): error C231: 'TCON': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(22): error C231: 'TMOD': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(23): error C231: 'TL0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(24): error C231: 'TL1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(25): error C231: 'TH0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(26): error C231: 'TH1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(27): error C231: 'CKCON': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(28): error C231: 'PSCTL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(29): error C231: 'P1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(30): error C231: 'TMR3CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(31): error C231: 'TMR3RLL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(32): error C231: 'TMR3RLH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(33): error C231: 'TMR3L': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(34): error C231: 'TMR3H': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(35): error C231: 'IDA0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(36): error C231: 'SCON0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(37): error C231: 'SBUF0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(38): error C231: 'ADC0DECL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(39): error C231: 'ADC0DECH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(40): error C231: 'CPT0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(41): error C231: 'CPT0MD': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(42): error C231: 'CPT0MX': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(43): error C231: 'P2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(44): error C231: 'SPI0CFG': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(45): error C231: 'SPI0CKR': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(46): error C231: 'SPI0DAT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(47): error C231: 'P0MDOUT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(48): error C231: 'P1MDOUT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(49): error C231: 'P2MDOUT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(50): error C231: 'IE': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(51): error C231: 'CLKSEL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(52): error C231: 'EMI0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(53): error C231: 'ADC0CGL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(54): error C231: 'ADC0CGM': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(55): error C231: 'ADC0CGH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(56): error C231: 'OSCXCN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(57): error C231: 'OSCICN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(58): error C231: 'OSCICL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(59): error C231: 'FLSCL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(60): error C231: 'FLKEY': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(61): error C231: 'IP': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(62): error C231: 'IDA0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(63): error C231: 'ADC0COL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(64): error C231: 'ADC0COM': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(65): error C231: 'ADC0COH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(66): error C231: 'ADC0BUF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(67): error C231: 'CLKMUL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(68): error C231: 'ADC0DAC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(69): error C231: 'SMB0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(70): error C231: 'SMB0CF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(71): error C231: 'SMB0DAT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(72): error C231: 'ADC0L': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(73): error C231: 'ADC0M': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(74): error C231: 'ADC0H': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(75): error C231: 'ADC0MUX': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(76): error C231: 'TMR2CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(77): error C231: 'TMR2RLL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(78): error C231: 'TMR2RLH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(79): error C231: 'TMR2L': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(80): error C231: 'TMR2H': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(81): error C231: 'PSW': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(82): error C231: 'REF0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(83): error C231: 'P0SKIP': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(84): error C231: 'P1SKIP': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(85): error C231: 'IDA1CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(86): error C231: 'PCA0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(87): error C231: 'PCA0MD': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(88): error C231: 'PCA0CPM0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(89): error C231: 'PCA0CPM1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(90): error C231: 'PCA0CPM2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(91): error C231: 'IDA1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(92): error C231: 'ACC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(93): error C231: 'XBR0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(94): error C231: 'XBR1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(95): error C231: 'PFE0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(96): error C231: 'IT01CF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(97): error C231: 'EIE1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(98): error C231: 'ADC0STA': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(99): error C231: 'PCA0CPL0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(100): error C231: 'PCA0CPH0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(101): error C231: 'PCA0CPL1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(102): error C231: 'PCA0CPH1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(103): error C231: 'PCA0CPL2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(104): error C231: 'PCA0CPH2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(105): error C231: 'B': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(106): error C231: 'RSTSRC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(107): error C231: 'P0MDIN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(108): error C231: 'P1MDIN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(109): error C231: 'ADC0MD': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(110): error C231: 'ADC0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(111): error C231: 'EIP1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(112): error C231: 'ADC0CLK': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(113): error C231: 'SPI0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(114): error C231: 'PCA0L': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(115): error C231: 'PCA0H': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(116): error C231: 'ADC0CF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(117): error C231: 'ADC0FL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(118): error C231: 'ADC0FM': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(119): error C231: 'ADC0FH': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(120): error C231: 'VDM0CN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(126): error C231: 'TF1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(127): error C231: 'TR1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(128): error C231: 'TF0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(129): error C231: 'TR0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(130): error C231: 'IE1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(131): error C231: 'IT1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(132): error C231: 'IE0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(133): error C231: 'IT0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(136): error C231: 'S0MODE': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(137): error C231: 'MCE0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(138): error C231: 'REN0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(139): error C231: 'TB80': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(140): error C231: 'RB80': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(141): error C231: 'TI0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(142): error C231: 'RI0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(145): error C231: 'EA': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(146): error C231: 'ESPI0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(147): error C231: 'ET2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(148): error C231: 'ES0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(149): error C231: 'ET1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(150): error C231: 'EX1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(151): error C231: 'ET0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(152): error C231: 'EX0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(155): error C231: 'PSPI0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(156): error C231: 'PT2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(157): error C231: 'PS0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(158): error C231: 'PT1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(159): error C231: 'PX1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(160): error C231: 'PT0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(161): error C231: 'PX0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(164): error C231: 'MASTER': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(165): error C231: 'TXMODE': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(166): error C231: 'STA': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(167): error C231: 'STO': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(168): error C231: 'ACKRQ': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(169): error C231: 'ARBLOST': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(170): error C231: 'ACK': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(171): error C231: 'SI': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(174): error C231: 'TF2H': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(175): error C231: 'TF2L': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(176): error C231: 'TF2LEN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(177): error C231: 'T2SPLIT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(178): error C231: 'TR2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(179): error C231: 'T2XCLK': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(182): error C231: 'CY': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(183): error C231: 'AC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(184): error C231: 'F0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(185): error C231: 'RS1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(186): error C231: 'RS0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(187): error C231: 'OV': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(188): error C231: 'F1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(189): error C231: 'P': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(192): error C231: 'CF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(193): error C231: 'CR': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(194): error C231: 'CCF2': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(195): error C231: 'CCF1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(196): error C231: 'CCF0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(199): error C231: 'AD0BUSY': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(200): error C231: 'AD0CBSY': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(201): error C231: 'AD0INT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(202): error C231: 'AD0S3C': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(203): error C231: 'AD0FFC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(204): error C231: 'AD0CALC': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(205): error C231: 'AD0ERR': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(206): error C231: 'AD0OVR': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(209): error C231: 'SPIF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(210): error C231: 'WCOL': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(211): error C231: 'MODF': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(212): error C231: 'RXOVRN': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(213): error C231: 'NSSMD1': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(214): error C231: 'NSSMD0': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(215): error C231: 'TXBMT': redefinition
+C:\Keil\C51\Inc\Cygnal\C8051F350.h(216): error C231: 'SPIEN': redefinition
+Target not created
+Rebuild target 'Target 1'
+assembling STARTUP.A51...
+compiling 1602_4bit.c...
+compiling main.c...
+user\main.c(136): warning C280: 'j': unreferenced local variable
+user\main.c(136): warning C280: 'tongdao': unreferenced local variable
+user\main.c(138): warning C280: 'min': unreferenced local variable
+user\main.c(454): warning C294: unreachable code
+user\main.c(457): warning C294: unreachable code
+user\main.c(464): warning C294: unreachable code
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD_WRITE_STRING?1602_4BIT
+Program Size: data=74.0 xdata=0 code=2031
+creating hex file from "project_C8051"...
+"project_C8051" - 0 Error(s), 7 Warning(s).
+Load "H:\\GHO\\C8051F350代码实现尝试速度提高 加班 1109\\C8051AD&UART\\project_C8051" 
+Flash Erase Done.
+Flash Image Update Complete. 
+Beginning programming...
+Flash Program Done: 2031 bytes programmed.
+Checksum:0x92e7
+Flash Verify Done: 2031 bytes verified.
+Rebuild target 'Target 1'
+assembling STARTUP.A51...
+compiling 1602_4bit.c...
+compiling main.c...
+user\main.c(263): error C141: syntax error near 'if'
+Target not created
+Rebuild target 'Target 1'
+assembling STARTUP.A51...
+compiling 1602_4bit.c...
+compiling main.c...
+user\main.c(136): warning C280: 'tongdao': unreferenced local variable
+user\main.c(137): warning C280: 'result': unreferenced local variable
+user\main.c(139): warning C280: 'min': unreferenced local variable
+user\main.c(460): warning C294: unreachable code
+user\main.c(463): warning C294: unreachable code
+user\main.c(470): warning C294: unreachable code
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD_WRITE_STRING?1602_4BIT
+Program Size: data=78.0 xdata=0 code=2345
+creating hex file from "project_C8051"...
+"project_C8051" - 0 Error(s), 7 Warning(s).
+Rebuild target 'Target 1'
+assembling STARTUP.A51...
+compiling 1602_4bit.c...
+compiling main.c...
+user\main.c(136): warning C280: 'tongdao': unreferenced local variable
+user\main.c(137): warning C280: 'result': unreferenced local variable
+user\main.c(139): warning C280: 'min': unreferenced local variable
+user\main.c(460): warning C294: unreachable code
+user\main.c(463): warning C294: unreachable code
+user\main.c(470): warning C294: unreachable code
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD_WRITE_STRING?1602_4BIT
+Program Size: data=78.0 xdata=0 code=2345
+creating hex file from "project_C8051"...
+"project_C8051" - 0 Error(s), 7 Warning(s).
+Load "H:\\GHO\\C8051F350代码实现尝试速度提高 加班 1109\\C8051AD&UART\\project_C8051" 
+Flash Erase Done.
+Flash Image Update Complete. 
+Beginning programming...
+Flash Program Done: 2345 bytes programmed.
+Checksum:0x445b
+Flash Verify Done: 2345 bytes verified.

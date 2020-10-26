@@ -1,0 +1,736 @@
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE F35X_SMBUS_EEPROM
+OBJECT MODULE PLACED IN F35x_SMBus_EEPROM.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE scr\F35x_SMBus_EEPROM.c INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT(.\F35x_SMBus
+                    -_EEPROM.lst) OBJECT(F35x_SMBus_EEPROM.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // F35x_SMBus_EEPROM.c
+   3          //-----------------------------------------------------------------------------
+   4          // Copyright 2006 Silicon Laboratories, Inc.
+   5          // http://www.silabs.com
+   6          //
+   7          // Program Description:
+   8          //
+   9          // This example demonstrates how the C8051F35x SMBus interface can communicate
+  10          // with a 256 byte I2C Serial EEPROM (Microchip 24LC02B).
+  11          // - Interrupt-driven SMBus implementation
+  12          // - Only master states defined (no slave or arbitration)
+  13          // - Timer1 used as SMBus clock source
+  14          // - Timer2 used by SMBus for SCL low timeout detection
+  15          // - SCL frequency defined by <SMB_FREQUENCY> constant
+  16          // - Pinout:
+  17          //    P0.0 -> SDA (SMBus)
+  18          //    P0.1 -> SCL (SMBus)
+  19          //
+  20          //
+  21          //    P2.0 -> C2D (debug interface)
+  22          //
+  23          //    all other ports pins unused
+  24          //
+  25          // How To Test:
+  26          //
+  27          // 1) Download code to a 'F35x device that is connected to a 24LC02B serial
+  28          //    EEPROM (see the EEPROM datasheet for the pinout information).
+  29          // 2) Run the code:
+  30          //         a) the test will indicate proper communication with the EEPROM by
+  31          //            turning on the LED at the end the end of the test
+  32          //         b) the test can also be verified by running to the if statements
+  33          //            in main and checking the sent and received values by adding
+  34          //            the variables to the Watch Window
+  35          //
+  36          // FID:            35X000008
+  37          // Target:         C8051F35x
+  38          // Tool chain:     Keil C51 7.50 / Keil EVAL C51
+  39          // Command Line:   None
+  40          //
+  41          // Release 1.0
+  42          //    -Initial Revision (TP)
+  43          //    -30 MAR 2006
+  44          //
+  45          
+  46          //-----------------------------------------------------------------------------
+  47          // Includes and Device-Specific Parameters
+  48          //-----------------------------------------------------------------------------
+  49          
+  50          #include "F35x_SMBus_EEPROM.h"
+  51          
+  52          //-----------------------------------------------------------------------------
+  53          // MAIN Routine
+  54          //-----------------------------------------------------------------------------
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 2   
+
+  55          //
+  56          // Main routine performs all configuration tasks, then loops forever sending
+  57          // and receiving SMBus data to the slave EEPROM.
+  58          
+  59          //void main (void)
+  60          //{
+  61          //   char in_buff[8] = {0};              // Incoming data buffer
+  62          //   char out_buff[8] = "ABCDEFG";       // Outgoing data buffer
+  63          //
+  64          //   unsigned char temp_char;            // Temporary variable
+  65          //   bit error_flag = 0;                 // Flag for checking EEPROM contents
+  66          //   unsigned char i;                    // Temporary counter variable
+  67          //
+  68          //
+  69          //   PCA0MD &= ~0x40;                    // WDTE = 0 (disable watchdog timer)
+  70          //
+  71          //   OSCICN |= 0x03;                     // Set internal oscillator to highest
+  72          //                                       // setting of 24500000
+  73          //
+  74          //   // If slave is holding SDA low because of an improper SMBus reset or error
+  75          //   while(!SDA)
+  76          //   {
+  77          //      // Provide clock pulses to allow the slave to advance out
+  78          //      // of its current state. This will allow it to release SDA.
+  79          //      XBR1 = 0x40;                     // Enable Crossbar
+  80          //      SCL = 0;                         // Drive the clock low
+  81          //      for(i = 0; i < 255; i++);        // Hold the clock low
+  82          //      SCL = 1;                         // Release the clock
+  83          //      while(!SCL);                     // Wait for open-drain
+  84          //                                       // clock output to rise
+  85          //      for(i = 0; i < 10; i++);         // Hold the clock high
+  86          //      XBR1 = 0x00;                     // Disable Crossbar
+  87          //   }
+  88          //
+  89          //   Port_Init ();                       // Initialize Crossbar and GPIO
+  90          //
+  91          //   LED = 0;                            // Turn off the LED before the test
+  92          //                                       // starts
+  93          //
+  94          //   Timer1_Init ();                     // Configure Timer1 for use as SMBus
+  95          //                                       // clock source
+  96          //
+  97          //   Timer3_Init ();                     // Configure Timer3 for use with SMBus
+  98          //                                       // low timeout detect
+  99          //
+ 100          //   SMBus_Init ();                      // Configure and enable SMBus
+ 101          //
+ 102          //
+ 103          //   EIE1 |= 0x01;                       // Enable the SMBus interrupt
+ 104          //
+ 105          //   EA = 1;                             // Global interrupt enable
+ 106          //
+ 107          //
+ 108          //
+ 109          //   // Read and write some bytes to the EEPROM and check for proper
+ 110          //   // communication
+ 111          //
+ 112          //   // Write the value 0xAA to location 0x25 in the EEPROM
+ 113          //   EEPROM_ByteWrite(0x25, 0xAA);
+ 114          //
+ 115          //   // Read the value at location 0x25 in the EEPROM
+ 116          //   temp_char = EEPROM_ByteRead(0x25);
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 3   
+
+ 117          //
+ 118          //   // Check that the data was read properly
+ 119          //   if (temp_char != 0xAA)
+ 120          //   {
+ 121          //      error_flag = 1;
+ 122          //   }
+ 123          //
+ 124          //   // Write the value 0xBB to location 0x25 in the EEPROM
+ 125          //   EEPROM_ByteWrite(0x25, 0xBB);
+ 126          //
+ 127          //   // Write the value 0xCC to location 0x38 in the EEPROM
+ 128          //   EEPROM_ByteWrite(0x38, 0xCC);
+ 129          //
+ 130          //   // Read the value at location 0x25 in the EEPROM
+ 131          //   temp_char = EEPROM_ByteRead(0x25);
+ 132          //
+ 133          //   // Check that the data was read properly
+ 134          //   if (temp_char != 0xBB)
+ 135          //   {
+ 136          //      error_flag = 1;
+ 137          //   }
+ 138          //
+ 139          //   // Read the value at location 0x38 in the EEPROM
+ 140          //   temp_char = EEPROM_ByteRead(0x38);
+ 141          //
+ 142          //   // Check that the data was read properly
+ 143          //   if (temp_char != 0xCC)
+ 144          //   {
+ 145          //      error_flag = 1;
+ 146          //   }
+ 147          //
+ 148          //   // Store the outgoing data buffer at EEPROM address 0x50
+ 149          //   EEPROM_WriteArray(0x50, out_buff, sizeof(out_buff));
+ 150          //
+ 151          //   // Fill the incoming data buffer with data starting at EEPROM address 0x50
+ 152          //   EEPROM_ReadArray(in_buff, 0x50, sizeof(in_buff));
+ 153          //
+ 154          //   // Check that the data that came from the EEPROM is the same as what was
+ 155          //   // sent
+ 156          //   for (i = 0; i < sizeof(in_buff); i++)
+ 157          //   {
+ 158          //      if (in_buff[i] != out_buff[i])
+ 159          //      {
+ 160          //         error_flag = 1;
+ 161          //      }
+ 162          //   }
+ 163          //
+ 164          //   // Indicate communication is good
+ 165          //   if (error_flag == 0)
+ 166          //   {
+ 167          //      // LED = ON indicates that the test passed
+ 168          //      LED = 1;
+ 169          //   }
+ 170          //
+ 171          //   while(1);
+ 172          //
+ 173          //}
+ 174          
+ 175          //-----------------------------------------------------------------------------
+ 176          // Initialization Routines
+ 177          //-----------------------------------------------------------------------------
+ 178          
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 4   
+
+ 179          //-----------------------------------------------------------------------------
+ 180          // SMBus_EEPROM_Init()
+ 181          //-----------------------------------------------------------------------------
+ 182          void SMBus_EEPROM_Init(void)
+ 183          {
+ 184   1         unsigned char i;                    // Temporary counter variable
+ 185   1         while(!SDA)
+ 186   1         {
+ 187   2            // Provide clock pulses to allow the slave to advance out
+ 188   2            // of its current state. This will allow it to release SDA.
+ 189   2            XBR1 = 0x40;                     // Enable Crossbar
+ 190   2            SCL = 0;                         // Drive the clock low
+ 191   2            for(i = 0; i < 255; i++);        // Hold the clock low
+ 192   2            SCL = 1;                         // Release the clock
+ 193   2            while(!SCL);                     // Wait for open-drain
+ 194   2                                             // clock output to rise
+ 195   2            for(i = 0; i < 10; i++);         // Hold the clock high
+ 196   2            XBR1 = 0x00;                     // Disable Crossbar
+ 197   2         }
+ 198   1              SMBus_PORT_Init();                                 // Initialize Crossbar and GPIO
+ 199   1      
+ 200   1          Timer1_Init ();                    // Configure Timer1 for use as SMBus
+ 201   1                                             // clock source
+ 202   1      
+ 203   1              Timer3_Init ();                    // Configure Timer3 for use with SMBus
+ 204   1                                             // low timeout detect
+ 205   1      
+ 206   1          SMBus_Init ();                     // Configure and enable SMBus
+ 207   1      
+ 208   1              EIE1 |= 0x01;                      // Enable the SMBus interrupt
+ 209   1      
+ 210   1              EA = 1;                             // Global interrupt enable
+ 211   1      }
+ 212          
+ 213          //-----------------------------------------------------------------------------
+ 214          // SMBus_Init()
+ 215          //-----------------------------------------------------------------------------
+ 216          //
+ 217          // Return Value : None
+ 218          // Parameters   : None
+ 219          //
+ 220          // The SMBus peripheral is configured as follows:
+ 221          // - SMBus enabled
+ 222          // - Slave mode disabled
+ 223          // - Timer1 used as clock source. The maximum SCL frequency will be
+ 224          //   approximately 1/3 the Timer1 overflow rate
+ 225          // - Setup and hold time extensions enabled
+ 226          // - Free and SCL low timeout detection enabled
+ 227          //
+ 228          void SMBus_Init (void)
+ 229          {
+ 230   1         SMB0CF = 0x5D;                      // Use Timer1 overflows as SMBus clock
+ 231   1                                             // source;
+ 232   1                                             // Disable slave mode;
+ 233   1                                             // Enable setup & hold time extensions;
+ 234   1                                             // Enable SMBus Free timeout detect;
+ 235   1                                             // Enable SCL low timeout detect;
+ 236   1      
+ 237   1         SMB0CF |= 0x80;                     // Enable SMBus;
+ 238   1      }
+ 239          
+ 240          //-----------------------------------------------------------------------------
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 5   
+
+ 241          // Timer1_Init()
+ 242          //-----------------------------------------------------------------------------
+ 243          //
+ 244          // Return Value : None
+ 245          // Parameters   : None
+ 246          //
+ 247          // Timer1 is configured as the SMBus clock source as follows:
+ 248          // - Timer1 in 8-bit auto-reload mode
+ 249          // - SYSCLK / 12 as Timer1 clock source
+ 250          // - Timer1 overflow rate => 3 * SMB_FREQUENCY
+ 251          // - The maximum SCL clock rate will be ~1/3 the Timer1 overflow rate
+ 252          // - Timer1 enabled
+ 253          //
+ 254          void Timer1_Init (void)
+ 255          {
+ 256   1      // Make sure the Timer can produce the appropriate frequency in 8-bit mode
+ 257   1      // Supported SMBus Frequencies range from 10kHz to 100kHz.  The CKCON register
+ 258   1      // settings may need to change for frequencies outside this range.
+ 259   1      #if ((SYSCLK/SMB_FREQUENCY/3) < 255)
+ 260   1         #define SCALE 1
+ 261   1            CKCON |= 0x08;                   // Timer1 clock source = SYSCLK
+ 262   1      #elif ((SYSCLK/SMB_FREQUENCY/4/3) < 255)
+                 #define SCALE 4
+                    CKCON |= 0x01;
+                    CKCON &= ~0x0A;                  // Timer1 clock source = SYSCLK / 4
+              #endif
+ 267   1      
+ 268   1         TMOD = 0x20;                        // Timer1 in 8-bit auto-reload mode
+ 269   1      
+ 270   1         TH1 = -(SYSCLK/SMB_FREQUENCY/12/3); // Timer1 configured to overflow at 1/3
+ 271   1                                             // the rate defined by SMB_FREQUENCY
+ 272   1      
+ 273   1         TL1 = TH1;                          // Init Timer1
+ 274   1      
+ 275   1         TR1 = 1;                            // Timer1 enabled
+ 276   1      }
+ 277          
+ 278          //-----------------------------------------------------------------------------
+ 279          // Timer3_Init()
+ 280          //-----------------------------------------------------------------------------
+ 281          //
+ 282          // Return Value : None
+ 283          // Parameters   : None
+ 284          //
+ 285          // Timer3 configured for use by the SMBus low timeout detect feature as
+ 286          // follows:
+ 287          // - Timer3 in 16-bit auto-reload mode
+ 288          // - SYSCLK/12 as Timer3 clock source
+ 289          // - Timer3 reload registers loaded for a 25ms overflow period
+ 290          // - Timer3 pre-loaded to overflow after 25ms
+ 291          // - Timer3 enabled
+ 292          //
+ 293          void Timer3_Init (void)
+ 294          {
+ 295   1         TMR3CN = 0x00;                      // Timer3 configured for 16-bit auto-
+ 296   1                                             // reload, low-byte interrupt disabled
+ 297   1      
+ 298   1         CKCON &= ~0x40;                     // Timer3 uses SYSCLK/12
+ 299   1      
+ 300   1         TMR3RL = -(SYSCLK/12/40);           // Timer3 configured to overflow after
+ 301   1         TMR3 = TMR3RL;                      // ~25ms (for SMBus low timeout detect)
+ 302   1      
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 6   
+
+ 303   1         EIE1 |= 0x80;                       // Timer3 interrupt enable
+ 304   1         TMR3CN |= 0x04;                     // Start Timer3
+ 305   1      }
+ 306          
+ 307          //-----------------------------------------------------------------------------
+ 308          // PORT_Init
+ 309          //-----------------------------------------------------------------------------
+ 310          //
+ 311          // Return Value : None
+ 312          // Parameters   : None
+ 313          //
+ 314          // Configure the Crossbar and GPIO ports.
+ 315          //
+ 316          // P0.0   digital   open-drain    SMBus SDA
+ 317          // P0.1   digital   open-drain    SMBus SCL
+ 318          //
+ 319          // P0.6   digital   push-pull     LED
+ 320          //
+ 321          // all other port pins unused
+ 322          //
+ 323          // Note: If the SMBus is moved, the SCL and SDA sbit declarations must also
+ 324          // be adjusted.
+ 325          //
+ 326          void SMBus_PORT_Init (void)
+ 327          {
+ 328   1         //P0MDOUT = 0x00;                     // All P0 pins open-drain output(P0全部引脚开漏输出)：
+ 329   1      
+ 330   1         P0MDOUT = 0xC0;                      //P1.7背光 P1.6按键,其余引脚全部开漏输出
+ 331   1      
+ 332   1         P0MDOUT |= 0x40;                    // Make the LED (P0.6) a push-pull
+ 333   1                                             // output
+ 334   1      
+ 335   1         XBR0 = 0x04;                        // Enable SMBus pins
+ 336   1      
+ 337   1         XBR1 = 0x40;                        // Enable crossbar and weak pull-ups
+ 338   1      
+ 339   1         P0 = 0xFF;
+ 340   1      
+ 341   1         //P0 = P0|0x03;                                         //P0.0 P0.1拉高 
+ 342   1      }
+ 343          
+ 344          //-----------------------------------------------------------------------------
+ 345          // SMBus Interrupt Service Routine (ISR)
+ 346          //-----------------------------------------------------------------------------
+ 347          //
+ 348          // SMBus ISR state machine
+ 349          // - Master only implementation - no slave or arbitration states defined
+ 350          // - All incoming data is written starting at the global pointer <pSMB_DATA_IN>
+ 351          // - All outgoing data is read from the global pointer <pSMB_DATA_OUT>
+ 352          //
+ 353          void SMBus_ISR (void) interrupt 7
+ 354          {
+ 355   1         bit FAIL = 0;                       // Used by the ISR to flag failed
+ 356   1                                             // transfers
+ 357   1      
+ 358   1         static char i;                      // Used by the ISR to count the
+ 359   1                                             // number of data bytes sent or
+ 360   1                                             // received
+ 361   1      
+ 362   1         static bit SEND_START = 0;          // Send a start
+ 363   1      
+ 364   1         switch (SMB0CN & 0xF0)              // Status vector
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 7   
+
+ 365   1         {
+ 366   2            // Master Transmitter/Receiver: START condition transmitted.
+ 367   2            case SMB_MTSTA:
+ 368   2               SMB0DAT = TARGET;             // Load address of the target slave
+ 369   2               SMB0DAT &= 0xFE;              // Clear the LSB of the address for the
+ 370   2                                             // R/W bit
+ 371   2               SMB0DAT |= SMB_RW;            // Load R/W bit
+ 372   2               STA = 0;                      // Manually clear START bit
+ 373   2               i = 0;                        // Reset data byte counter
+ 374   2               break;
+ 375   2      
+ 376   2            // Master Transmitter: Data byte (or Slave Address) transmitted
+ 377   2            case SMB_MTDB:
+ 378   2               if (ACK)                      // Slave Address or Data Byte
+ 379   2               {                             // Acknowledged?
+ 380   3                  if (SEND_START)
+ 381   3                  {
+ 382   4                     STA = 1;
+ 383   4                     SEND_START = 0;
+ 384   4                     break;
+ 385   4                  }
+ 386   3                  if(SMB_SENDWORDADDR)       // Are we sending the word address?
+ 387   3                  {
+ 388   4                     SMB_SENDWORDADDR = 0;   // Clear flag
+ 389   4                     SMB0DAT = WORD_ADDR;    // Send word address
+ 390   4      
+ 391   4                     if (SMB_RANDOMREAD)
+ 392   4                     {
+ 393   5                        SEND_START = 1;      // Send a START after the next ACK cycle
+ 394   5                        SMB_RW = READ;
+ 395   5                     }
+ 396   4      
+ 397   4                     break;
+ 398   4                  }
+ 399   3      
+ 400   3                  if (SMB_RW==WRITE)         // Is this transfer a WRITE?
+ 401   3                  {
+ 402   4      
+ 403   4                     if (i < SMB_DATA_LEN)   // Is there data to send?
+ 404   4                     {
+ 405   5                        // send data byte
+ 406   5                        SMB0DAT = *pSMB_DATA_OUT;
+ 407   5      
+ 408   5                        // increment data out pointer
+ 409   5                        pSMB_DATA_OUT++;
+ 410   5      
+ 411   5                        // increment number of bytes sent
+ 412   5                        i++;
+ 413   5                     }
+ 414   4                     else
+ 415   4                     {
+ 416   5                       STO = 1;              // Set STO to terminte transfer
+ 417   5                       SMB_BUSY = 0;         // Clear software busy flag
+ 418   5                     }
+ 419   4                  }
+ 420   3                  else {}                    // If this transfer is a READ,
+ 421   3                                             // then take no action. Slave
+ 422   3                                             // address was transmitted. A
+ 423   3                                             // separate 'case' is defined
+ 424   3                                             // for data byte recieved.
+ 425   3               }
+ 426   2               else                          // If slave NACK,
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 8   
+
+ 427   2               {
+ 428   3                  if(SMB_ACKPOLL)
+ 429   3                  {
+ 430   4                     STA = 1;                // Restart transfer
+ 431   4                  }
+ 432   3                  else
+ 433   3                  {
+ 434   4                     FAIL = 1;               // Indicate failed transfer
+ 435   4                  }                          // and handle at end of ISR
+ 436   3               }
+ 437   2               break;
+ 438   2      
+ 439   2            // Master Receiver: byte received
+ 440   2            case SMB_MRDB:
+ 441   2               if ( i < SMB_DATA_LEN )       // Is there any data remaining?
+ 442   2               {
+ 443   3                  *pSMB_DATA_IN = SMB0DAT;   // Store received byte
+ 444   3                  pSMB_DATA_IN++;            // Increment data in pointer
+ 445   3                  i++;                       // Increment number of bytes received
+ 446   3                  ACK = 1;                   // Set ACK bit (may be cleared later
+ 447   3                                             // in the code)
+ 448   3      
+ 449   3               }
+ 450   2      
+ 451   2               if (i == SMB_DATA_LEN)        // This is the last byte
+ 452   2               {
+ 453   3                  SMB_BUSY = 0;              // Free SMBus interface
+ 454   3                  ACK = 0;                   // Send NACK to indicate last byte
+ 455   3                                             // of this transfer
+ 456   3                  STO = 1;                   // Send STOP to terminate transfer
+ 457   3               }
+ 458   2      
+ 459   2               break;
+ 460   2      
+ 461   2            default:
+ 462   2               FAIL = 1;                     // Indicate failed transfer
+ 463   2                                             // and handle at end of ISR
+ 464   2               break;
+ 465   2         }
+ 466   1      
+ 467   1         if (FAIL)                           // If the transfer failed,
+ 468   1         {
+ 469   2            SMB0CF &= ~0x80;                 // Reset communication
+ 470   2            SMB0CF |= 0x80;
+ 471   2            STA = 0;
+ 472   2            STO = 0;
+ 473   2            ACK = 0;
+ 474   2      
+ 475   2            SMB_BUSY = 0;                    // Free SMBus
+ 476   2      
+ 477   2            FAIL = 0;
+ 478   2         }
+ 479   1      
+ 480   1         SI = 0;                             // Clear interrupt flag
+ 481   1      }
+ 482          
+ 483          //-----------------------------------------------------------------------------
+ 484          // Timer3 Interrupt Service Routine (ISR)
+ 485          //-----------------------------------------------------------------------------
+ 486          //
+ 487          // A Timer3 interrupt indicates an SMBus SCL low timeout.
+ 488          // The SMBus is disabled and re-enabled if a timeout occurs.
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 9   
+
+ 489          //
+ 490          void Timer3_ISR (void) interrupt 14
+ 491          {
+ 492   1         SMB0CF &= ~0x80;                    // Disable SMBus
+ 493   1         SMB0CF |= 0x80;                     // Re-enable SMBus
+ 494   1         TMR3CN &= ~0x80;                    // Clear Timer3 interrupt-pending flag
+ 495   1         SMB_BUSY = 0;                       // Free bus
+ 496   1      }
+ 497          
+ 498          //-----------------------------------------------------------------------------
+ 499          // Support Functions
+ 500          //-----------------------------------------------------------------------------
+ 501          
+ 502          //-----------------------------------------------------------------------------
+ 503          // EEPROM_ByteWrite ()
+ 504          //-----------------------------------------------------------------------------
+ 505          //
+ 506          // Return Value : None
+ 507          // Parameters   :
+ 508          //   1) unsigned char addr - address to write in the EEPROM
+ 509          //                        range is full range of character: 0 to 255
+ 510          //
+ 511          //   2) unsigned char dat - data to write to the address <addr> in the EEPROM
+ 512          //                        range is full range of character: 0 to 255
+ 513          //
+ 514          // This function writes the value in <dat> to location <addr> in the EEPROM
+ 515          // then polls the EEPROM until the write is complete.
+ 516          //
+ 517          void EEPROM_ByteWrite(unsigned char addr, unsigned char dat)
+ 518          {
+ 519   1         while (SMB_BUSY);                   // Wait for SMBus to be free.
+ 520   1         SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+ 521   1      
+ 522   1         // Set SMBus ISR parameters
+ 523   1         TARGET = EEPROM_ADDR;               // Set target slave address
+ 524   1         SMB_RW = WRITE;                     // Mark next transfer as a write
+ 525   1         SMB_SENDWORDADDR = 1;               // Send Word Address after Slave Address
+ 526   1         SMB_RANDOMREAD = 0;                 // Do not send a START signal after
+ 527   1                                             // the word address
+ 528   1         SMB_ACKPOLL = 1;                    // Enable Acknowledge Polling (The ISR
+ 529   1                                             // will automatically restart the
+ 530   1                                             // transfer if the slave does not
+ 531   1                                             // acknoledge its address.
+ 532   1      
+ 533   1         // Specify the Outgoing Data
+ 534   1         WORD_ADDR = addr;                   // Set the target address in the
+ 535   1                                             // EEPROM's internal memory space
+ 536   1      
+ 537   1         SMB_SINGLEBYTE_OUT = dat;           // Store <dat> (local variable) in a
+ 538   1                                             // global variable so the ISR can read
+ 539   1                                             // it after this function exits
+ 540   1      
+ 541   1         // The outgoing data pointer points to the <dat> variable
+ 542   1         pSMB_DATA_OUT = &SMB_SINGLEBYTE_OUT;
+ 543   1      
+ 544   1         SMB_DATA_LEN = 1;                   // Specify to ISR that the next transfer
+ 545   1                                             // will contain one data byte
+ 546   1      
+ 547   1         // Initiate SMBus Transfer
+ 548   1         STA = 1;
+ 549   1      
+ 550   1      }
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 10  
+
+ 551          
+ 552          //-----------------------------------------------------------------------------
+ 553          // EEPROM_WriteArray ()
+ 554          //-----------------------------------------------------------------------------
+ 555          //
+ 556          // Return Value : None
+ 557          // Parameters   :
+ 558          //   1) unsigned char dest_addr - beginning address to write to in the EEPROM
+ 559          //                        range is full range of character: 0 to 255
+ 560          //
+ 561          //   2) unsigned char* src_addr - pointer to the array of data to be written
+ 562          //                        range is full range of character: 0 to 255
+ 563          //
+ 564          //   3) unsigned char len - length of the array to be written to the EEPROM
+ 565          //                        range is full range of character: 0 to 255
+ 566          //
+ 567          // Writes <len> data bytes to the EEPROM slave specified by the <EEPROM_ADDR>
+ 568          // constant.
+ 569          //
+ 570          void EEPROM_WriteArray(unsigned char dest_addr, unsigned char* src_addr,
+ 571                                 unsigned char len)
+ 572          {
+ 573   1         unsigned char i;
+ 574   1         unsigned char* pData = (unsigned char*) src_addr;
+ 575   1      
+ 576   1         for( i = 0; i < len; i++ ){
+ 577   2            EEPROM_ByteWrite(dest_addr++, *pData++);
+ 578   2         }
+ 579   1      
+ 580   1      }
+ 581          
+ 582          //-----------------------------------------------------------------------------
+ 583          // EEPROM_ByteRead ()
+ 584          //-----------------------------------------------------------------------------
+ 585          //
+ 586          // Return Value :
+ 587          //   1) unsigned char data - data read from address <addr> in the EEPROM
+ 588          //                        range is full range of character: 0 to 255
+ 589          //
+ 590          // Parameters   :
+ 591          //   1) unsigned char addr - address to read data from the EEPROM
+ 592          //                        range is full range of character: 0 to 255
+ 593          //
+ 594          // This function returns a single byte from location <addr> in the EEPROM then
+ 595          // polls the <SMB_BUSY> flag until the read is complete.
+ 596          //
+ 597          unsigned char EEPROM_ByteRead(unsigned char addr)
+ 598          {
+ 599   1         unsigned char retval;               // Holds the return value
+ 600   1      
+ 601   1         while (SMB_BUSY);                   // Wait for SMBus to be free.
+ 602   1         SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+ 603   1      
+ 604   1         // Set SMBus ISR parameters
+ 605   1         TARGET = EEPROM_ADDR;               // Set target slave address
+ 606   1         SMB_RW = WRITE;                     // A random read starts as a write
+ 607   1                                             // then changes to a read after
+ 608   1                                             // the repeated start is sent. The
+ 609   1                                             // ISR handles this switchover if
+ 610   1                                             // the <SMB_RANDOMREAD> bit is set.
+ 611   1         SMB_SENDWORDADDR = 1;               // Send Word Address after Slave Address
+ 612   1         SMB_RANDOMREAD = 1;                 // Send a START after the word address
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 11  
+
+ 613   1         SMB_ACKPOLL = 1;                    // Enable Acknowledge Polling
+ 614   1      
+ 615   1      
+ 616   1         // Specify the Incoming Data
+ 617   1         WORD_ADDR = addr;                   // Set the target address in the
+ 618   1                                             // EEPROM's internal memory space
+ 619   1      
+ 620   1         pSMB_DATA_IN = &retval;             // The incoming data pointer points to
+ 621   1                                             // the <retval> variable.
+ 622   1      
+ 623   1         SMB_DATA_LEN = 1;                   // Specify to ISR that the next transfer
+ 624   1                                             // will contain one data byte
+ 625   1      
+ 626   1         // Initiate SMBus Transfer
+ 627   1         STA = 1;
+ 628   1         while(SMB_BUSY);                    // Wait until data is read
+ 629   1      
+ 630   1         return retval;
+ 631   1      
+ 632   1      }
+ 633          
+ 634          //-----------------------------------------------------------------------------
+ 635          // EEPROM_ReadArray ()
+ 636          //-----------------------------------------------------------------------------
+ 637          //
+ 638          // Return Value : None
+ 639          // Parameters   :
+ 640          //   1) unsigned char* dest_addr - pointer to the array that will be filled
+ 641          //                                 with the data from the EEPROM
+ 642          //                        range is full range of character: 0 to 255
+ 643          //
+ 644          //   2) unsigned char src_addr - beginning address to read data from the EEPROM
+ 645          //                        range is full range of character: 0 to 255
+ 646          //
+ 647          //   3) unsigned char len - length of the array to be read from the EEPROM
+ 648          //                        range is full range of character: 0 to 255
+ 649          //
+ 650          // Reads up to 256 data bytes from the EEPROM slave specified by the
+ 651          // <EEPROM_ADDR> constant.
+ 652          //
+ 653          void EEPROM_ReadArray (unsigned char* dest_addr, unsigned char src_addr,
+ 654                                 unsigned char len)
+ 655          {
+ 656   1         while (SMB_BUSY);                   // Wait for SMBus to be free.
+ 657   1         SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+ 658   1      
+ 659   1         // Set SMBus ISR parameters
+ 660   1         TARGET = EEPROM_ADDR;               // Set target slave address
+ 661   1         SMB_RW = WRITE;                     // A random read starts as a write
+ 662   1                                             // then changes to a read after
+ 663   1                                             // the repeated start is sent. The
+ 664   1                                             // ISR handles this switchover if
+ 665   1                                             // the <SMB_RANDOMREAD> bit is set.
+ 666   1         SMB_SENDWORDADDR = 1;               // Send Word Address after Slave Address
+ 667   1         SMB_RANDOMREAD = 1;                 // Send a START after the word address
+ 668   1         SMB_ACKPOLL = 1;                    // Enable Acknowledge Polling
+ 669   1      
+ 670   1         // Specify the Incoming Data
+ 671   1         WORD_ADDR = src_addr;               // Set the target address in the
+ 672   1                                             // EEPROM's internal memory space
+ 673   1      
+ 674   1         // Set the the incoming data pointer
+C51 COMPILER V9.01   F35X_SMBUS_EEPROM                                                     03/12/2013 11:20:16 PAGE 12  
+
+ 675   1         pSMB_DATA_IN = (unsigned char*) dest_addr;
+ 676   1      
+ 677   1      
+ 678   1         SMB_DATA_LEN = len;                 // Specify to ISR that the next transfer
+ 679   1                                             // will contain <len> data bytes
+ 680   1      
+ 681   1      
+ 682   1         // Initiate SMBus Transfer
+ 683   1         STA = 1;
+ 684   1         while(SMB_BUSY);                    // Wait until data is read
+ 685   1      
+ 686   1      }
+ 687          
+ 688          //-----------------------------------------------------------------------------
+ 689          // End Of File
+ 690          //-----------------------------------------------------------------------------
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    538    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     11      14
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      6       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,661 @@
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE user\main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PR
+                    -INT(.\main.lst) TABS(2) OBJECT(main.obj)
+
+line level    source
+
+   1          /*
+   2                                   \\\|///
+   3                                 \\  - -  //
+   4                                  (  @ @  )
+   5          +---------------------oOOo-(_)-oOOo-------------------------+
+   6          | Author   :YingTao Technology                |
+   7          | Data     :2013-11-09                                    |
+   8          | Version  :Bata2.1                                       |
+   9          |   QQ       :1625874998                                  |
+  10          |   Function :                                              |
+  11          |                                   |
+  12          | History  :                                          |
+  13          |                                                           |
+  14          |                             Oooo              |
+  15          +-----------------------oooO--(   )-------------------------+
+  16                                 (   )   ) /
+  17                                  \ (   (_/
+  18                                   \_)     
+  19          */
+  20          /*
+  21          实验名称:   AD差分模式采集（开发板默认程序，直接上点就可以调试）
+  22          实验前事项：连接j7，j4，j2，j10的所有跳线帽（PCB板上均有注释），连接串口线（波特率：115200）和 LCD1602屏
+  23          操作方法：  调节w1电位器（PCB板上均有注释）
+  24          实验结果：  LCD1602实时显示当前电压值，同时串口也会同步显示当前电压
+  25          
+  26          */  
+  27          //-----------------------------------------------------------------------------
+  28          // Includes
+  29          //-----------------------------------------------------------------------------
+  30          
+  31          #include <C8051F350.h>                 // SFR declarations
+  32          #include <stdio.h>
+  33          #include "1602_4bit.h"                 // SFR declarations
+  34          #include  "math.h"
+  35          //-----------------------------------------------------------------------------
+  36          // 16-bit SFR Definitions for 'F35x
+  37          //-----------------------------------------------------------------------------
+  38          
+  39          sfr16 TMR2RL = 0xCA;                   // Timer2 reload value
+  40          sfr16 TMR2 = 0xCC;                     // Timer2 counter
+  41          sfr16 ADC0DEC = 0x9A;                  // ADC0 Decimation Ratio Register
+  42          
+  43          //-----------------------------------------------------------------------------
+  44          // Global CONSTANTS
+  45          //-----------------------------------------------------------------------------
+  46          
+  47          #define SYSCLK       24500000          // SYSCLK frequency in Hz
+  48          
+  49          #define MDCLK         2457600          // Modulator clock in Hz (ideal is
+  50                                                 // (2.4576 MHz)
+  51          #define OWR               960// 20          // Desired Output Word Rate in Hz
+  52          
+  53          #define BAUDRATE       9600          // Baud rate of UART in bps
+  54          
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 2   
+
+  55          //sbit LED = P0^7;                       // LED='1' means ON
+  56          //sbit SW2 = P1^0;                       // SW2='0' means switch pressed
+  57          sbit cd4051_a = P0^0;
+  58          sbit cd4051_b = P0^1;
+  59          sbit cd4051_c = P0^6;
+  60          sbit adc_732_en = P1^0;
+  61          sbit adc_732_wr = P1^1;
+  62          sbit adc_732_cs = P1^2;
+  63          sbit adc_732_a4 = P1^3;
+  64          sbit adc_732_a3 = P1^4;
+  65          sbit adc_732_a2 = P1^5;
+  66          sbit adc_732_a1 = P1^6;
+  67          sbit adc_732_a0 = P1^7;
+  68          
+  69          typedef union LONGDATA{                // Access LONGDATA as an
+  70             unsigned long result;               // unsigned long variable or
+  71             unsigned char Byte[4];              // 4 unsigned byte variables
+  72          }LONGDATA;
+  73          
+  74          // With the Keil compiler and union byte addressing:
+  75          // [0] = bits 31-24, [1] =  bits 23-16, [2] = bits 15-8, [3] = bits 7-0
+  76          #define Byte3 0
+  77          #define Byte2 1
+  78          #define Byte1 2
+  79          #define Byte0 3
+  80          
+  81          //-----------------------------------------------------------------------------
+  82          // Function PROTOTYPES
+  83          //-----------------------------------------------------------------------------
+  84          
+  85          void Oscillator_Init (void);
+  86          void Port_Init (void);
+  87          void UART0_Init (void);
+  88          void ADC0_Init(void);
+  89          
+  90          //-----------------------------------------------------------------------------
+  91          // MAIN Routine
+  92          //-----------------------------------------------------------------------------
+  93          
+  94          
+  95           
+  96           LONGDATA data_24;
+  97             unsigned long mV;
+  98             
+  99          LONGDATA getdata()
+ 100          {
+ 101   1          LONGDATA rawValue;
+ 102   1          ADC0MD  = 0x82; 
+ 103   1                           // Spin forever
+ 104   1          while(!AD0INT);                     // Wait till conversion complete
+ 105   1          AD0INT = 0;                         // Clear ADC0 conversion complete flag
+ 106   1      
+ 107   1           // Copy the output value of the ADC
+ 108   1           rawValue.Byte[Byte3] = 0x00;
+ 109   1           rawValue.Byte[Byte2] = (unsigned char)ADC0H;
+ 110   1           rawValue.Byte[Byte1] = (unsigned char)ADC0M;
+ 111   1           rawValue.Byte[Byte0] = (unsigned char)ADC0L;
+ 112   1      
+ 113   1        
+ 114   1      
+ 115   1           return rawValue;   
+ 116   1      }
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 3   
+
+ 117           void Send_Char(unsigned char ch)
+ 118          {
+ 119   1         SBUF0 = ch;                             //?????
+ 120   1         while(TI0 == 0);                        //??????
+ 121   1         TI0 = 0;                                //????
+ 122   1      }
+ 123             
+ 124          void  delay_ms(unsigned char ms)
+ 125          {
+ 126   1           unsigned int s;
+ 127   1         do{
+ 128   2              s = 24000000L;
+ 129   2            while(--s)  ;   //14T per loop
+ 130   2           }while(--ms);
+ 131   1      }
+ 132          
+ 133          
+ 134          void main (void)
+ 135          {
+ 136   1        unsigned char iwap,iwapys,i,j,tongdao;  
+ 137   1        unsigned long result;
+ 138   1        LONGDATA vo1,vo2,vo[8]=0;
+ 139   1        unsigned long min;
+ 140   1         PCA0MD &= ~0x40;                    // WDTE = 0 (clear watchdog timer
+ 141   1                                             // enable)
+ 142   1      
+ 143   1         Oscillator_Init();                  // Initialize system clock
+ 144   1         Port_Init();                        // Initialize Crossbar and GPIO
+ 145   1         UART0_Init();                       // Initialize UART0 for printf's
+ 146   1         ADC0_Init();                        // Initialize ADC0
+ 147   1         LCD_init();
+ 148   1         AD0INT = 0;
+ 149   1         ADC0MD = 0x83;                      // Start continuous conversions
+ 150   1         EA = 1;                             // Enable global interrupts
+ 151   1         LCD_clr();
+ 152   1         cd4051_a=1;
+ 153   1           cd4051_b=1;
+ 154   1           cd4051_c=1;
+ 155   1           adc_732_en = 0;
+ 156   1      adc_732_wr = 0;
+ 157   1      adc_732_cs = 0;
+ 158   1      adc_732_a4 = 1;
+ 159   1      adc_732_a3 = 1;
+ 160   1      adc_732_a2 = 1;
+ 161   1      adc_732_a1 = 1;
+ 162   1      adc_732_a0= 1;
+ 163   1      iwap=1-1;
+ 164   1      iwapys=32-1;
+ 165   1         while (1) {  
+ 166   2                    {
+ 167   3                
+ 168   3      
+ 169   3      //                                iwap=1-1;
+ 170   3      //                            iwapys=32-1;
+ 171   3                  adc_732_a4=iwap/16;
+ 172   3                  adc_732_a3=(iwap-adc_732_a4*16)/8;
+ 173   3                  adc_732_a2=(iwap-adc_732_a4*16-adc_732_a3*8)/4;
+ 174   3                  adc_732_a1=(iwap-adc_732_a4*16-adc_732_a3*8-adc_732_a2*4)/2;
+ 175   3                  adc_732_a0=(iwap-adc_732_a4*16-adc_732_a3*8-adc_732_a2*4-adc_732_a1*2);
+ 176   3                  i=3;
+ 177   3                  
+ 178   3                          while(1)
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 4   
+
+ 179   3                          {
+ 180   4                              
+ 181   4                            place:  
+ 182   4      //                            for(i=0;i<8;i++)
+ 183   4                              {
+ 184   5                                  
+ 185   5                                  cd4051_c=i/4;
+ 186   5                                  cd4051_b=(i-cd4051_c*4)/2;
+ 187   5                                  cd4051_a=(i-cd4051_c*4-cd4051_b*2);
+ 188   5                                  delay_ms(2);
+ 189   5                                  vo1=getdata();
+ 190   5      //                            delay_long(1);
+ 191   5                                  vo2=getdata();
+ 192   5                              //  TX1_write2buff(0xaa);
+ 193   5      //                            while(((vo1.result-vo2.result)>100)||((vo1.result-vo2.result)<-100))
+ 194   5                                  while(abs(vo1.result-vo2.result)>167772)
+ 195   5                                  {
+ 196   6                                      vo1=getdata();
+ 197   6      ////                                delay_long(1);
+ 198   6                                      vo2=getdata();
+ 199   6      
+ 200   6                                  }
+ 201   5                                  if(10000000<vo1.result)
+ 202   5                                  {
+ 203   6                                      switch(i)
+ 204   6                                      {
+ 205   7                                        case 0:
+ 206   7                                          i=4;
+ 207   7      //                                  Send_Char(0xbb);
+ 208   7      //                            Send_Char(i);
+ 209   7                                        goto place;
+ 210   7                                        break;
+ 211   7                                        case 1:
+ 212   7                                          i=0;
+ 213   7      //                                  Send_Char(0xbb);
+ 214   7      //                            Send_Char(i);
+ 215   7                                        goto place;
+ 216   7                                        break;
+ 217   7                                        case 2:
+ 218   7                                          i=1;
+ 219   7      //                                  Send_Char(0xbb);
+ 220   7      //                            Send_Char(i);
+ 221   7                                        goto place;
+ 222   7                                        break;
+ 223   7                                        case 3:
+ 224   7                                          i=6;
+ 225   7      //                                  Send_Char(0xbb);
+ 226   7      //                            Send_Char(i);
+ 227   7                                        goto place;
+ 228   7                                        break;
+ 229   7                                        case 4:
+ 230   7                                          i=3;
+ 231   7      //                                  Send_Char(0xbb);
+ 232   7      //                            Send_Char(i);
+ 233   7                                        goto place;
+ 234   7                                        break;
+ 235   7                                        case 5:
+ 236   7                                          i=2;
+ 237   7      //                                  Send_Char(0xbb);
+ 238   7      //                            Send_Char(i);
+ 239   7                                        goto place;
+ 240   7                                        break;
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 5   
+
+ 241   7                                        case 6:
+ 242   7                                          i=7;
+ 243   7      //                                  Send_Char(0xbb);
+ 244   7      //                            Send_Char(i);
+ 245   7                                        goto place;
+ 246   7                                        break;
+ 247   7                                        case 7:
+ 248   7                                          i=5;
+ 249   7      //                                  Send_Char(0xbb);
+ 250   7      //                            Send_Char(i);
+ 251   7                                        goto place;
+ 252   7                                        break;
+ 253   7                                        default:
+ 254   7                                          i=4;
+ 255   7      //                                  Send_Char(0xbb);
+ 256   7      //                            Send_Char(i);
+ 257   7                                        goto place;
+ 258   7                                      }
+ 259   6                                  }
+ 260   5                                  else
+ 261   5                                  {
+ 262   6                                    for(j=0;j<4;j++)
+ 263   6                                    {
+ 264   7                                        vo[j]=getdata();
+ 265   7                                    }
+ 266   6                                    vo1.result=(vo[0].result+vo[1].result+vo[2].result+vo[3].result)/4;
+ 267   6      //                              if(iwap>=0&&iwap<=15)
+ 268   6      //                                iwapys=31-iwap;
+ 269   6      //                              else
+ 270   6      //                                iwapys=iwap-16;
+ 271   6      //                                  high=vo1>>8;
+ 272   6      //                                  low=vo1&0x00ff;
+ 273   6                                        Send_Char(0xff);
+ 274   6                                        Send_Char(0xff);
+ 275   6                                        Send_Char(0xcc);
+ 276   6                                        Send_Char(0xdd);
+ 277   6                                        Send_Char(iwapys);
+ 278   6                                        Send_Char(i);
+ 279   6                                        Send_Char(vo1.Byte[Byte3]);
+ 280   6                                        Send_Char(vo1.Byte[Byte2]);
+ 281   6                                        Send_Char(vo1.Byte[Byte1]);
+ 282   6                                        Send_Char(vo1.Byte[Byte0]);
+ 283   6                                        Send_Char(0xff);
+ 284   6                                        Send_Char(0xee);
+ 285   6                                        Send_Char(0xee);
+ 286   6                                        switch(iwap){
+ 287   7                                      
+ 288   7                                      case 1-1:
+ 289   7                                      iwap=16-1;
+ 290   7                                                                      iwapys=1-1;
+ 291   7                                      break;
+ 292   7                                      case 2-1:
+ 293   7                                      iwap=18-1;
+ 294   7                                                                      iwapys=30-1;
+ 295   7                                      break;
+ 296   7                                      case 3-1:
+ 297   7                                      iwap=19-1;
+ 298   7                                                                      iwapys=28-1;
+ 299   7                                      break;
+ 300   7                                      case 4-1:
+ 301   7                                      iwap=20-1;
+ 302   7                                                                      iwapys=26-1;
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 6   
+
+ 303   7                                      break;
+ 304   7                                      case 5-1:
+ 305   7                                      iwap=21-1;
+ 306   7                                                                      iwapys=24-1;
+ 307   7                                      break;
+ 308   7                                      case 6-1:
+ 309   7                                      iwap=22-1;
+ 310   7                                                                      iwapys=22-1;
+ 311   7                                      break;
+ 312   7                                      case 7-1:
+ 313   7                                      iwap=23-1;
+ 314   7                                                                      iwapys=20-1;
+ 315   7                                      break;
+ 316   7                                      case 8-1:
+ 317   7                                      iwap=24-1;
+ 318   7                                                                      iwapys=18-1;
+ 319   7                                      break;
+ 320   7                                      case 9-1:
+ 321   7                                      iwap=25-1;
+ 322   7                                                                      iwapys=16-1;
+ 323   7                                      break;
+ 324   7                                      case 10-1:
+ 325   7                                      iwap=26-1;
+ 326   7                                                                      iwapys=14-1;
+ 327   7                                      break;
+ 328   7                                      case 11-1:
+ 329   7                                      iwap=27-1;
+ 330   7                                                                      iwapys=12-1;
+ 331   7                                      break;
+ 332   7                                      case 12-1:
+ 333   7                                      iwap=28-1;
+ 334   7                                                                      iwapys=10-1;
+ 335   7                                      break;
+ 336   7                                      case 13-1:
+ 337   7                                      iwap=29-1;
+ 338   7                                                                      iwapys=8-1;
+ 339   7                                      break;
+ 340   7                                      case 14-1:
+ 341   7                                      iwap=30-1;
+ 342   7                                                                      iwapys=6-1;
+ 343   7                                      break;
+ 344   7                                      case 15-1:
+ 345   7                                      iwap=31-1;
+ 346   7                                                                      iwapys=4-1;
+ 347   7                                      break;
+ 348   7                                      case 16-1:
+ 349   7                                      iwap=32-1;
+ 350   7                                                                      iwapys=2-1;
+ 351   7                                      break;
+ 352   7                                      case 17-1:
+ 353   7                                      iwap=1-1;
+ 354   7                                                                      iwapys=32-1;
+ 355   7                                      break;
+ 356   7                                      case 18-1:
+ 357   7                                      iwap=17-1;
+ 358   7                                                                      iwapys=31-1;
+ 359   7                                      break;
+ 360   7                                      case 19-1:
+ 361   7                                      iwap=2-1;
+ 362   7                                                                      iwapys=29-1;
+ 363   7                                      break;
+ 364   7                                      case 20-1:
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 7   
+
+ 365   7                                      iwap=3-1;
+ 366   7                                                                      iwapys=27-1;
+ 367   7                                      break;
+ 368   7                                      case 21-1:
+ 369   7                                      iwap=4-1;
+ 370   7                                                                      iwapys=25-1;
+ 371   7                                      break;
+ 372   7                                      case 22-1:
+ 373   7                                      iwap=5-1;
+ 374   7                                                                      iwapys=23-1;
+ 375   7                                      break;
+ 376   7                                      case 23-1:
+ 377   7                                      iwap=6-1;
+ 378   7                                                                      iwapys=21-1;
+ 379   7                                      break;
+ 380   7                                      case 24-1:
+ 381   7                                      iwap=7-1;
+ 382   7                                                                      iwapys=19-1;
+ 383   7                                      break;
+ 384   7                                      case 25-1:
+ 385   7                                      iwap=8-1;
+ 386   7                                                                      iwapys=17-1;
+ 387   7                                      break;
+ 388   7                                      case 26-1:
+ 389   7                                      iwap=9-1;
+ 390   7                                                                      iwapys=15-1;
+ 391   7                                      break;
+ 392   7                                      case 27-1:
+ 393   7                                      iwap=10-1;
+ 394   7                                                                      iwapys=13-1;
+ 395   7                                      break;
+ 396   7                                      case 28-1:
+ 397   7                                      iwap=11-1;
+ 398   7                                                                      iwapys=11-1;
+ 399   7                                      break;
+ 400   7                                      case 29-1:
+ 401   7                                      iwap=12-1;
+ 402   7                                                                      iwapys=9-1;
+ 403   7                                      break;
+ 404   7                                      case 30-1:
+ 405   7                                      iwap=13-1;
+ 406   7                                                                      iwapys=7-1;
+ 407   7                                      break;
+ 408   7                                      case 31-1:
+ 409   7                                      iwap=14-1;
+ 410   7                                                                      iwapys=5-1;
+ 411   7                                      break;
+ 412   7                                      case 32-1:
+ 413   7                                      iwap=15-1;
+ 414   7                                                                      iwapys=3-1;
+ 415   7                                      break;
+ 416   7                                      default :
+ 417   7                                                                      { iwap=17-1;
+ 418   8                                                                          iwapys=31-1 ;}  }
+ 419   6                                        goto here;
+ 420   6                                  }
+ 421   5                              }
+ 422   4                          }
+ 423   3                          here:
+ 424   3                          ;   
+ 425   3                              
+ 426   3              }
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 8   
+
+ 427   2         }
+ 428   1      }
+*** WARNING C280 IN LINE 136 OF user\main.c: 'tongdao': unreferenced local variable
+*** WARNING C280 IN LINE 137 OF user\main.c: 'result': unreferenced local variable
+*** WARNING C280 IN LINE 139 OF user\main.c: 'min': unreferenced local variable
+ 429          
+ 430          //-----------------------------------------------------------------------------
+ 431          // Oscillator_Init
+ 432          //-----------------------------------------------------------------------------
+ 433          //
+ 434          // Return Value : None
+ 435          // Parameters   : None
+ 436          //
+ 437          // This routine initializes the system clock to use the internal 24.5MHz
+ 438          // oscillator as its clock source.  Also enables missing clock detector reset.
+ 439          //
+ 440          //-----------------------------------------------------------------------------
+ 441          
+ 442          
+ 443          
+ 444          void Oscillator_Init (void)
+ 445          {
+ 446   1         OSCICN = 0x83;                      // Configure internal oscillator for
+ 447   1                                             // its lowest frequency
+ 448   1         RSTSRC = 0x04;                      // Enable missing clock detector
+ 449   1      }
+ 450          
+ 451          //-----------------------------------------------------------------------------
+ 452          // Port_Init
+ 453          //-----------------------------------------------------------------------------
+ 454          //
+ 455          // Return Value : None
+ 456          // Parameters   : None
+ 457          //
+ 458          // This function initializes the GPIO and the Crossbar
+ 459          //
+ 460          // Pinout:
+ 461          //
+ 462          //   P0.4 - UART TX (digital, push-pull)
+ 463          //   P0.5 - UART RX (digital, open-drain)
+ 464          //
+ 465          //   AIN0.2 - ADC0 input
+ 466          //
+ 467          //-----------------------------------------------------------------------------
+ 468          void Port_Init (void)
+ 469          {
+ 470   1        //P0SKIP = 0x00; 
+ 471   1      //P0SKIP = 0;  
+ 472   1        XBR0 = 0x01;                        // UART0 Selected
+ 473   1         XBR1 = 0x40;                        // Enable crossbar and weak pull-ups
+ 474   1         P0MDOUT |= 0xD0;  //0xDF;//                  // TX, LEDs = Push-pull
+ 475   1        P1MDOUT |= 0xFF;                    // TX, LEDs = Push-pull
+ 476   1       //  P2MDOUT |= 0xFF;                    // TX, LEDs = Push-pull
+ 477   1      }
+ 478          
+ 479          //-----------------------------------------------------------------------------
+ 480          // UART0_Init
+ 481          //-----------------------------------------------------------------------------
+ 482          //
+ 483          // Return Value : None
+ 484          // Parameters   : None
+ 485          //
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 9   
+
+ 486          // Configure the UART0 using Timer1, for <BAUDRATE> and 8-N-1.
+ 487          //
+ 488          //-----------------------------------------------------------------------------
+ 489          void UART0_Init (void)
+ 490          {
+ 491   1         SCON0 = 0x10;                       // SCON0: 8-bit variable bit rate
+ 492   1                                             //        level of STOP bit is ignored
+ 493   1                                             //        RX enabled
+ 494   1                                             //        ninth bits are zeros
+ 495   1                                             //        clear RI0 and TI0 bits
+ 496   1         if (SYSCLK/BAUDRATE/2/256 < 1) {
+ 497   2            TH1 = -(SYSCLK/BAUDRATE/2);
+ 498   2            CKCON |=  0x08;                  // T1M = 1; SCA1:0 = xx
+ 499   2         } else if (SYSCLK/BAUDRATE/2/256 < 4) {
+ 500   2            TH1 = -(SYSCLK/BAUDRATE/2/4);
+ 501   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 01
+ 502   2            CKCON |=  0x01;
+ 503   2         } else if (SYSCLK/BAUDRATE/2/256 < 12) {
+ 504   2            TH1 = -(SYSCLK/BAUDRATE/2/12);
+ 505   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 00
+ 506   2         } else if (SYSCLK/BAUDRATE/2/256 < 48) {
+ 507   2            TH1 = -(SYSCLK/BAUDRATE/2/48);
+ 508   2            CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 10
+ 509   2            CKCON |=  0x02;
+ 510   2         } else {
+ 511   2            while (1);                       // Error.  Unsupported baud rate
+ 512   2         }
+ 513   1      
+ 514   1         TL1 = TH1;                          // Init Timer1
+ 515   1         TMOD &= ~0xf0;                      // TMOD: timer 1 in 8-bit autoreload
+ 516   1         TMOD |=  0x20;
+ 517   1         TR1 = 1;                            // START Timer1
+ 518   1         TI0 = 1;                            // Indicate TX0 ready
+ 519   1      }
+ 520          
+ 521          
+ 522          //-----------------------------------------------------------------------------
+ 523          // ADC0_Init
+ 524          //-----------------------------------------------------------------------------
+ 525          //
+ 526          // Return Value : None
+ 527          // Parameters   : None
+ 528          //
+ 529          // Initialize the ADC to use the temperature sensor. (non-differential)
+ 530          //
+ 531          //-----------------------------------------------------------------------------
+ 532          void ADC0_Init (void)
+ 533          {
+ 534   1         REF0CN |= 0x03;                     // Enable internal Vref
+ 535   1         ADC0CN = 0x00;                      // Gain = 1, Unipolar mode
+ 536   1         ADC0CF = 0x04;                      // Interrupts upon SINC3 filter output
+ 537   1                                             // and uses internal VREF
+ 538   1      
+ 539   1         ADC0CLK = (SYSCLK/MDCLK)-1;         // Generate MDCLK for modulator.
+ 540   1                                             // Ideally MDCLK = 2.4576MHz
+ 541   1      
+ 542   1         // Program decimation rate for desired OWR
+ 543   1         ADC0DEC = ((unsigned long) MDCLK / (unsigned long) OWR /
+ 544   1                    (unsigned long) 128) - 1;
+ 545   1      
+ 546   1         ADC0BUF = 0x00;                     // Turn off Input Buffers
+ 547   1         ADC0MUX = 0x76;                     // v= AIN0.7 -  AIN0.6
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 10  
+
+ 548   1      
+ 549   1         ADC0MD = 0x81;                      // Start internal calibration
+ 550   1         while(AD0CALC != 1);                // Wait until calibration is complete
+ 551   1      
+ 552   1         EIE1   |= 0x00; //0x08;                     // Enable ADC0 Interrupts
+ 553   1         ADC0MD  = 0x80;                     // Enable the ADC0 (IDLE Mode)
+ 554   1      }
+ 555          
+ 556          //-----------------------------------------------------------------------------
+ 557          // Interrupt Service Routines
+ 558          //-----------------------------------------------------------------------------
+ 559          //-----------------------------------------------------------------------------
+ 560          // ADC0_ISR
+ 561          //-----------------------------------------------------------------------------
+ 562          //
+ 563          // This ISR prints the result to the UART. The ISR is called after each ADC
+ 564          // conversion.
+ 565          //
+ 566          //-----------------------------------------------------------------------------
+ 567          void ADC0_ISR (void) interrupt 10
+ 568          {
+ 569   1      //   static LONGDATA rawValue;
+ 570   1      //   unsigned long mV;
+ 571   1      //  /// char LCD_valut[10]="xxxx.xxmv";
+ 572   1      
+ 573   1      
+ 574   1      //   while(!AD0INT);                     // Wait till conversion complete
+ 575   1      //   AD0INT = 0;                         // Clear ADC0 conversion complete flag
+ 576   1      
+ 577   1      //   // Copy the output value of the ADC
+ 578   1      //   rawValue.Byte[Byte3] = 0x00;
+ 579   1      //   rawValue.Byte[Byte2] = (unsigned char)ADC0H;
+ 580   1      //   rawValue.Byte[Byte1] = (unsigned char)ADC0M;
+ 581   1      //   rawValue.Byte[Byte0] = (unsigned char)ADC0L;
+ 582   1      
+ 583   1      //  
+ 584   1      
+ 585   1      //   mV = rawValue.result*100/ 6710;        // Because of bounds issues, this
+ 586   1      //                                       // calculation has been manipulated as
+ 587   1      //                                       // shown above
+ 588   1      //                                       // (i.e. 2500 (VREF) * 2^24 (ADC result)
+ 589   1      //                                       // is greater than 2^32)
+ 590   1      
+ 591   1      //   printf("AIN0.7-AIN0.6: %6ld mV\n",mV);
+ 592   1      //   //itoa(mV,strmV);
+ 593   1      ////   LCD_valut[0] =  ( mV / 100000 ) % 10 + 0x30;  
+ 594   1      ////   LCD_valut[1] =  ( mV / 10000 ) % 10 + 0x30;
+ 595   1      ////   LCD_valut[2] =  ( mV / 1000 ) % 10 + 0x30;
+ 596   1      ////   LCD_valut[3] =  ( mV / 100 ) % 10 + 0x30;
+ 597   1      ////   LCD_valut[5] =  ( mV / 10 ) % 10 + 0x30;
+ 598   1      ////   LCD_valut[6] =  ( mV / 1) % 10 + 0x30;
+ 599   1      ////   LCD_write_string(0,LINE1,"AIN0.7 - AIN0.6:");
+ 600   1      ////   LCD_write_string(0,LINE2,LCD_valut);
+ 601   1      //   
+ 602   1      }
+ 603          
+ 604          
+ 605          //-----------------------------------------------------------------------------
+ 606          // End Of File
+ 607          //-----------------------------------------------------------------------------
+ 608          
+ 609          
+C51 COMPILER V9.53.0.0   MAIN                                                              04/11/2020 21:00:03 PAGE 11  
+
+ 610          
+ 611          
+*** WARNING C294 IN LINE 497 OF user\main.c: unreachable code
+*** WARNING C294 IN LINE 500 OF user\main.c: unreachable code
+*** WARNING C294 IN LINE 507 OF user\main.c: unreachable code
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1353    ----
+   CONSTANT SIZE    =     32    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      8      57
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  6 WARNING(S),  0 ERROR(S)
